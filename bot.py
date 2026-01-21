@@ -11,8 +11,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 URL = "https://billets.stadefrance.com/selection/event/date?productId=10229597069844"
 CHECK_INTERVAL = 5  # secondes
 
-PUSHOVER_USER_KEY = "usy8bpcxjkyzkenuosqxcx2ar6hn18"
-PUSHOVER_APP_TOKEN = "ae8muyrtx5sbya1aqq8aaihxoaxb19"
+PUSHOVER_USER_KEY = os.environ["usy8bpcxjkyzkenuosqxcx2ar6hn18"]
+PUSHOVER_APP_TOKEN = os.environ["ae8muyrtx5sbya1aqq8aaihxoaxb19"]
 
 # ================= NOTIF =================
 
