@@ -17,6 +17,7 @@ PUSHOVER_APP_TOKEN = os.environ.get("ae8muyrtx5sbya1aqq8aaihxoaxb19")
 # ================= NOTIF =================
 
 def send_push_notification(message):
+    import requests
     url = "https://api.pushover.net/1/messages.json"
     data = {
         "token": PUSHOVER_APP_TOKEN,
@@ -26,6 +27,7 @@ def send_push_notification(message):
         "url_title": "Ouvrir la billetterie"
     }
     requests.post(url, data=data)
+
 
 # ================= SELENIUM HEADLESS =================
 
