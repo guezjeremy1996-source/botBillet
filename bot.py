@@ -4,6 +4,7 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ================= CONFIG =================
@@ -13,11 +14,9 @@ CHECK_INTERVAL = 5  # secondes
 
 PUSHOVER_USER_KEY = os.environ.get("usy8bpcxjkyzkenuosqxcx2ar6hn18")
 PUSHOVER_APP_TOKEN = os.environ.get("ae8muyrtx5sbya1aqq8aaihxoaxb19")
-
 # ================= NOTIF =================
 
 def send_push_notification(message):
-    import requests
     url = "https://api.pushover.net/1/messages.json"
     data = {
         "token": PUSHOVER_APP_TOKEN,
@@ -26,17 +25,20 @@ def send_push_notification(message):
         "url": URL,
         "url_title": "Ouvrir la billetterie"
     }
-    requests.post(url, data=data)
-
+    try:
+        requests.post(url, data=data)
+    except Exception as e:
+        print("Erreur lors de l'envoi de la notif :", e)
 
 # ================= SELENIUM HEADLESS =================
 
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")  # mode invisible
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--disable-gpu")
-options.add_argument("--window-size=1920,1080")
+options = Options()
+options.add_argument("--headless")                   # mode invisible
+options.add_argument("--no-sandbox")                 # nécessaire pour Render
+options.add_argument("--disable-dev-shm-usage")      # mémoire partagée
+options.add_argument("--disable-gpu")                # désactive GPU
+options.add_argument("--window-size=1920,1080")      # taille de fenêtre
+options.binary_location = "/usr/bin/chromium"        # chemin Chromium sur Render
 
 driver = webdriver.Chrome(
     service=Service(ChromeDriverManager().install()),
@@ -64,3 +66,4 @@ while True:
     except Exception as e:
         print("Erreur :", e)
         time.sleep(CHECK_INTERVAL)
+
