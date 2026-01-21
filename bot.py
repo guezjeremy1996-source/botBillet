@@ -1,49 +1,72 @@
+import time
+import os
+import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-import os
-import time
-import requests
 
-# 🔹 Lire les clés Pushover depuis les variables d'environnement
-PUSHOVER_APP_TOKEN = os.getenv("PUSHOVER_APP_TOKEN")
-PUSHOVER_USER_KEY = os.getenv("PUSHOVER_USER_KEY")
+# ================= CONFIG =================
+URL = "https://billets.stadefrance.com/selection/event/date?productId=10229597069844"
+CHECK_INTERVAL = 5  # secondes
 
-# Vérifier que les clés sont bien présentes
-if not PUSHOVER_APP_TOKEN or not PUSHOVER_USER_KEY:
-    raise Exception("PUSHOVER_APP_TOKEN ou PUSHOVER_USER_KEY manquant !")
+# 🔹 Utiliser les variables d'environnement définies dans Render
+PUSHOVER_USER_KEY = os.environ["PUSHOVER_USER_KEY"]
+PUSHOVER_APP_TOKEN = os.environ["PUSHOVER_APP_TOKEN"]
 
-# 🔹 Options Chrome pour Render
+# ================= NOTIF =================
+def send_push_notification(message):
+    url = "https://api.pushover.net/1/messages.json"
+    data = {
+        "token": PUSHOVER_APP_TOKEN,
+        "user": PUSHOVER_USER_KEY,
+        "message": message,
+        "url": URL,
+        "url_title": "Ouvrir la billetterie"
+    }
+    try:
+        response = requests.post(url, data=data)
+        response.raise_for_status()
+        print("Notification envoyée ✅")
+    except Exception as e:
+        print("Erreur notification :", e)
+
+# ================= SELENIUM HEADLESS =================
 options = Options()
-options.add_argument("--headless")  # mode sans interface graphique
+options.add_argument("--headless")  # mode invisible
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.binary_location = "/usr/bin/chromium"  # chemin vers Chromium sur Render
+options.add_argument("--disable-gpu")
+options.add_argument("--window-size=1920,1080")
+options.binary_location = "/usr/bin/chromium"  # chemin correct pour Render
 
-# 🔹 Créer le driver Chrome
 driver = webdriver.Chrome(
     service=Service(ChromeDriverManager().install()),
     options=options
 )
 
-# Exemple simple : aller sur Google
-driver.get("https://www.google.com")
-print(driver.title)
+print("Surveillance 24/7 démarrée...")
+driver.get(URL)
 
-# 🔹 Exemple d'envoi d'une notification Pushover
-def send_pushover(message):
-    requests.post(
-        "https://api.pushover.net/1/messages.json",
-        data={
-            "token": PUSHOVER_APP_TOKEN,
-            "user": PUSHOVER_USER_KEY,
-            "message": message
-        }
-    )
+# ================= BOUCLE DE SURVEILLANCE =================
+while True:
+    try:
+        time.sleep(3)
+        body_text = driver.find_element(By.TAG_NAME, "body").text.lower()
 
-send_pushover("Bot démarré avec succès !")
+        if "non disponible" not in body_text:
+            print("🎫 BILLETS DISPONIBLES !!!")
+            send_push_notification("🎫 Billets disponibles !")
+            break
+        else:
+            print("Toujours indisponible...")
 
-# Attendre un peu pour debug
-time.sleep(5)
+        time.sleep(CHECK_INTERVAL)
+        driver.refresh()
+
+    except Exception as e:
+        print("Erreur :", e)
+        time.sleep(CHECK_INTERVAL)
+
 driver.quit()
